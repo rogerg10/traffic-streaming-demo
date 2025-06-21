@@ -4,8 +4,8 @@ This repository contains example code and configuration to accompany the blog po
 
 ## Structure
 
-- `snowflake_setup/`: SQL scripts for user, schema, and role setup in Snowflake.
-- `app/`: Python script to simulate traffic sensor event streaming.
+- `snowflake_setup`: SQL scripts for user, schema, and role setup in Snowflake.
+- `send_kinesis_events`: Python script to simulate traffic sensor event streaming.
 
 ## Usage
 
