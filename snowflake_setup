@@ -1,0 +1,51 @@
+-- Create a Snowflake service user for AWS integration
+CREATE OR REPLACE USER svc_aws_stream
+  PASSWORD = '<your_password>'
+  LOGIN_NAME = 'my_service_user'
+  DEFAULT_ROLE = public
+  MUST_CHANGE_PASSWORD = FALSE
+  EMAIL = '<your_email@example.com>';
+
+-- Assign public key for key pair authentication
+ALTER USER svc_aws_stream SET RSA_PUBLIC_KEY='<your_RSA_public_key>';
+
+-- Remove password for key pair only authentication
+ALTER USER svc_aws_stream UNSET PASSWORD;
+
+-- Grant SYSADMIN role to service user
+GRANT ROLE SYSADMIN TO USER svc_aws_stream;
+
+-- Create database, schema, and table for traffic events
+CREATE DATABASE IF NOT EXISTS traffic_db;
+CREATE SCHEMA IF NOT EXISTS traffic_db.raw_data;
+CREATE OR REPLACE TABLE traffic_db.raw_data.traffic_events (
+  eventId NUMBER,
+  sensorType VARCHAR,
+  location VARCHAR,
+  eventTime TIMESTAMP_NTZ,
+  trafficSpeed NUMBER,
+  congestionLevel NUMBER,
+  incidentType VARCHAR,
+  vehicleCount NUMBER,
+  avgVehicleLength NUMBER,
+  weatherCondition VARCHAR,
+  temperature NUMBER,
+  laneClosed BOOLEAN,
+  reportedBy VARCHAR
+);
+
+
+-- Use SECURITYADMIN for role and privilege management
+USE ROLE SECURITYADMIN;
+
+-- Create custom role for Firehose ingestion
+CREATE ROLE kinesis_firehose_role COMMENT = 'Role for AWS Kinesis Firehose to ingest traffic data';
+
+-- Grant privileges on DB, schema, and table
+GRANT USAGE ON DATABASE traffic_db TO ROLE kinesis_firehose_role;
+GRANT USAGE ON SCHEMA traffic_db.raw_data TO ROLE kinesis_firehose_role;
+GRANT INSERT, SELECT ON TABLE traffic_db.raw_data.traffic_events TO ROLE kinesis_firehose_role;
+
+-- Assign role to service user
+GRANT ROLE kinesis_firehose_role TO USER svc_aws_stream;
+
